@@ -1,5 +1,5 @@
 {
-    "name": "dropcowboy",
+    "name": "dropcowboy-cli",
     "version": "1.0.0",
     "description": "DropCowboy SDK + CLI",
     "main": "dist/cjs/index.js",
