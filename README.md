@@ -49,7 +49,7 @@ Create a file at `~/.dropcowboyrc`:
 ### Per-instance Configuration
 
 ```ts
-import DropCowboy from 'dropcowboy';
+import { DropCowboy } from 'dropcowboy';
 
 const client = new DropCowboy({
   teamId: 'your-team-id',
