@@ -190,14 +190,17 @@ const pools = await client.listPools();
 dropcowboy config --team-id=<teamId> --secret=<secret>
 
 # Send RVM
-dropcowboy send-rvm --phone=+1234567890 --message-url=https://example.com/message.mp3
+dropcowboy send-rvm --brand-id=<brandId> --phone-number=+1234567890 --recording-id=https://example.com/message.mp3
 
 # Send SMS
-dropcowboy send-sms --phone=+1234567890 --message="Hello World"
+dropcowboy send-sms --caller-id=<callerId> --phone-number=+1234567890 --pool-id=<poolId> --sms-body="Hello World" --opt-in=true
 
 # Manage contact lists
-dropcowboy list-create --name="Leads"
-dropcowboy list-append --id=<listId> --contacts='+1234567890,+1987654321'
+dropcowboy contact-list-create --name="Leads"
+dropcowboy contact-list-append --list-id=<listId> --fields=phone_number,first_name --values='[["+1234567890","John"],["+1987654321","Jane"]]'
+dropcowboy contact-list-get --list-id=<listId>
+dropcowboy contact-list-rename --list-id=<listId> --name="New Name"
+dropcowboy contact-list-delete --list-id=<listId>
 ```
 
 > All CLI commands support `--help` for usage info.
@@ -210,9 +213,16 @@ All SDK methods throw errors if credentials are missing or the API responds with
 
 ```ts
 try {
-  await client.sendRvm({ phone: '+1234567890', messageUrl: '...' });
+    await client.sendRvm({
+        brand_id: "00000000-0000-0000-0000-000000000000", 
+        recording_id: "00000000-0000-0000-0000-000000000000", 
+        phone_number: "+15552223333", 
+        forwarding_number: "+15557778888", 
+        foreign_id: "YOUR_DATABASE_RECORD_ID", 
+        callback_url: "https://your.server.com"
+    });
 } catch (err) {
-  console.error('Error sending RVM:', err);
+    console.error('Error sending RVM:', err);
 }
 ```
 
