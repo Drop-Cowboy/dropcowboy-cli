@@ -61,17 +61,32 @@ const client = new DropCowboy({
 
 ## SDK Reference
 
-### `sendRvm(payload: { phone: string; messageUrl: string })`
+### `sendRvm(payload: { phone_number: string; brand_id: string; recording_id: string; callback_url: string; })`
 
 Sends a ringless voicemail to a phone number.
 
 **Parameters:**
 
-| Name       | Type   | Required | Description                 |
-|------------|--------|---------|-----------------------------|
-| payload    | object | yes     | Payload containing message details |
-| phone      | string | yes     | Recipient phone number      |
-| messageUrl | string | yes     | URL to the voicemail audio |
+| Name              | Type   | Required    | Description                                                                                                                                         |
+| ----------------- | ------ | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| team_id           | string | yes         | Located on the API Setting tab. Example: <Your Account>                                                                                             |
+| secret            | string | yes         | Located on the API Setting tab. Example: <Your Secret>                                                                                              |
+| brand_id          | string | yes         | Located in your account's trust center tab. Example: <Your Brand GUID>                                                                              |
+| phone_number      | string | yes         | Your contact's phone number in E.164 format. Example: +15552223333                                                                                  |
+| audio_url         | string | conditional | A URL to the voicemail audio (mp3 or wav). Requires special approval. Example: https://example.com/yourfile.mp3 |
+| audio_type        | string | conditional | File type of audio_url (mp3 or wav). Example: mp3                                                                                                   |
+| forwarding_number | string | conditional | Phone number to forward calls/texts when contact replies. Example: +15557778888                                                                     |
+| recording_id      | string | conditional | ID of the audio recording. Example: <Your Recording GUID>                                                                                           |
+| voice_id          | string | conditional | ID of the Mimic AI™ voice to use. Example: <Your Voice GUID>                                                                                        |
+| tts_body          | string | conditional | Text to convert to speech using voice_id. Example: Hey Joe, this is Bob from Brand...                                                               |
+| status_format     | string | conditional | Status code mapping for callbacks. Only set if instructed by Drop Cowboy                                                                            |
+| byoc              | object | conditional | SIP Trunks and STIR/SHAKEN credentials. Contact support for details                                                                                 |
+| foreign_id        | string | optional    | Value to identify this drop in your system. Example: <Your system's ID>                                                                             |
+| privacy           | string | optional    | Caller ID privacy settings. Example: off                                                                                                            |
+| phone_ivr_id      | string | optional    | IVR to use when contact calls back. Example: <Your IVR GUID>                                                                                        |
+| pool_id           | string | optional    | ID of private number pool. Defaults to public shared pool                                                                                           |
+| postal_code       | string | optional    | Contact postal code for TCPA compliance. Example: 02101                                                                                             |
+| callback_url      | string | optional    | Override default RVM webhook URL. Example: http://example.com                                                                 |
 
 **Returns:** `Promise<object>` — API response.
 
@@ -79,37 +94,68 @@ Sends a ringless voicemail to a phone number.
 
 ```ts
 await client.sendRvm({
-  phone: '+1234567890',
-  messageUrl: 'https://example.com/message.mp3'
+    brand_id: "00000000-0000-0000-0000-000000000000", 
+    recording_id: "00000000-0000-0000-0000-000000000000", 
+    phone_number: "+15552223333", 
+    forwarding_number: "+15557778888", 
+    foreign_id: "YOUR_DATABASE_RECORD_ID", 
+    callback_url: "https://your.server.com"
 });
 ```
 
-### `sendSms(payload: { phone: string; message: string })`
+### `sendSms(payload: { phone_number: string; caller_id: string; sms_body: string; pool_id: string; opt_in: boolean; })`
 
 Sends an SMS message.
+
+**Parameters:**
+
+| Name         | Type    | Required | Description                                                                                                                            |
+| ------------ | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| team_id      | string  | yes      | Located on the API Setting tab. Example: <Your Account>                                                                                |
+| secret       | string  | yes      | Located on the API Setting tab. Example: <Your Secret>                                                                                 |
+| caller_id    | string  | yes      | Phone number to forward calls/texts when contact replies. Must be in E.164 format. Example: +15557778888                               |
+| phone_number | string  | yes      | Your contact's phone number in E.164 format. Example: +15552223333                                                                     |
+| pool_id      | string  | yes      | ID of the private number pool registered to send SMS messages                                                                          |
+| sms_body     | string  | yes      | Plain text message. Character limit: 160. Example: Hello World                                                                         |
+| opt_in       | boolean | yes      | Confirmation that you obtained OPT-IN permission. Example: true                                                                        |
+| foreign_id   | string  | optional | Value to identify this drop in your system. Passed through to webhook callback. Max length 256 characters. Example: <Your system's ID> |
+| callback_url | string  | optional | Override default RVM webhook URL. Example: http://example.com                                                    |
+
+**Returns:** `Promise<object>` — API response.
 
 **Example:**
 
 ```ts
 await client.sendSms({
-  phone: '+1234567890',
-  message: 'Hello from DropCowboy!'
+    phone_number: 15552223333,
+    caller_id: 15557778888,
+    pool_id: "text",
+    sms_body: "Hello world",
+    opt_in: true,
+    callback_url: "http://example.com",
+    foreign_id: "<Your system's ID>"
 });
 ```
 
 ### Contact List Methods
 
-- `createContactList(payload: { name: string })`
+- `createContactList(payload: { list_name: string })`
 - `getContactList(listId: string)`
-- `renameContactList(listId: string, payload: { name: string })`
+- `renameContactList(listId: string, payload: { list_name: string })`
 - `deleteContactList(listId: string)`
-- `appendContactsToList(listId: string, payload: { contacts: Array<{ phone: string }> })`
+- `appendContactsToList(listId: string, payload: { fields: Array<string>, values: Array<Array<string>> })`
 
 **Example:**
 
 ```ts
-const list = await client.createContactList({ name: 'Leads' });
-await client.appendContactsToList(list.id, { contacts: [{ phone: '+1234567890' }] });
+const list = await client.createContactList({ list_name: 'Leads' });
+await client.appendContactsToList(list.id, {
+    fields: ['first_name', 'email'],
+    values: [
+        ['hunter', 'hunter@email.com'],
+        ['john', 'john@email.com']
+    ]
+});
 ```
 
 ### `listBrands(query?: Record<string, any>)`
@@ -119,7 +165,7 @@ Lists brands.
 **Example:**
 
 ```ts
-const brands = await client.listBrands({ page: 1, limit: 20 });
+const brands = await client.listBrands({ api_allowed: true });
 ```
 
 ### `listRecordings(query?: Record<string, any>)`
@@ -131,9 +177,8 @@ All accept optional query parameters.
 **Example:**
 
 ```ts
-const recordings = await client.listRecordings({ page: 1 });
-const media = await client.listMedia({ type: 'audio' });
-const pools = await client.listPools({ active: true });
+const recordings = await client.listRecordings({ api_allowed: true });
+const pools = await client.listPools();
 ```
 
 ---

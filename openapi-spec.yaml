@@ -1,0 +1,478 @@
+openapi: 3.1.0
+info:
+  title: Drop Cowboy Public API
+  description: OpenAPI 3.1 specs for Drop Cowboy public docs. Includes RVM, SMS, Contact Lists, Recordings (media), Brands, and Number Pools endpoints.
+  version: "1.0.0"
+servers:
+  - url: https://api.dropcowboy.com/v1
+paths:
+  /rvm:
+    post:
+      summary: Send ringless voicemail
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RVMRequest'
+      responses:
+        '200':
+          description: Request accepted. Delivery status delivered via webhook callback.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RVMResponse'
+      description: >
+        Directly integrate ringless voicemail delivery into your software. Successful deliveries are deducted from your account balance based on the rate dictated by your monthly subscription plan. Invoke the Drop Cowboy API from your application by sending an HTTP POST containing a json document with the attributes listed below. Once delivery is attempted, you will receive a callback containing the delivery status to the webhook you specified in your API settings contained in your account.
+  /sms:
+    post:
+      summary: Send SMS
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SMSRequest'
+      responses:
+        '200':
+          description: Request accepted. Results include accepted_count and rejected details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SMSResponse'
+      description: Invoke our api from your application by sending an HTTP POST containing a json document with the attributes listed below. Once delivery is attempted, you will receive a callback containing the delivery status to the webhook you specified in your api settings.
+  /list:
+    post:
+      summary: Create contact list
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                list_name:
+                  type: string
+              required:
+                - list_name
+      responses:
+        '200':
+          description: Created. Returns list_id, list_name, created_at.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListCreatedResponse'
+      security:
+        - teamSecretAuth: []
+  /list/{list_id}:
+    get:
+      summary: Get contact list details
+      parameters:
+        - name: list_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List details including contact_count.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListDetailsResponse'
+      security:
+        - teamSecretAuth: []
+    post:
+      summary: Rename contact list
+      parameters:
+        - name: list_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                list_name:
+                  type: string
+              required:
+                - list_name
+      responses:
+        '200':
+          description: 200 OK on success
+      security:
+        - teamSecretAuth: []
+    delete:
+      summary: Delete contact list
+      parameters:
+        - name: list_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 200 OK on success
+      security:
+        - teamSecretAuth: []
+  /list/{list_id}/contacts:
+    post:
+      summary: Append contacts to a list
+      parameters:
+        - name: list_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppendContactsRequest'
+      responses:
+        '200':
+          description: Returns accepted_count and rejected details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppendContactsResponse'
+      security:
+        - teamSecretAuth: []
+  /brand:
+    get:
+      summary: List brands
+      parameters:
+        - in: query
+          name: api_allowed
+          schema:
+            type: boolean
+          description: Filter brands by whether API access has been granted or not.
+      description: Invoke our brand api from your application by sending an HTTP GET containing with the attributes listed.
+      responses:
+        '200':
+          description: Array of brands
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrandListResponse'
+      security:
+        - teamSecretAuth: []
+  /recording:
+    get:
+      summary: List media
+      parameters:
+        - in: query
+          name: api_allowed
+          schema:
+            type: boolean
+          description: Filter brands by whether API access has been granted or not.
+      description: Invoke our recordings api from your application by sending an HTTP GET containing with the attributes listed.
+      responses:
+        '200':
+          description: Array of recordings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingListResponse'
+      security:
+        - teamSecretAuth: []
+  /media:
+    get:
+      summary: List media
+      description: Invoke our recordings api from your application by sending an HTTP GET containing with the attributes listed.
+      responses:
+        '200':
+          description: Array of media
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaListResponse'
+      security:
+        - teamSecretAuth: []
+  /pool:
+    get:
+      summary: List number pools
+      description: Invoke our number pool api from your application by sending an HTTP GET containing with the attributes listed.
+      responses:
+        '200':
+          description: Array of number pools
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PoolListResponse'
+      security:
+        - teamSecretAuth: []
+components:
+  securitySchemes:
+    teamSecretAuth:
+      type: apiKey
+      in: header
+      name: x-team-id / x-secret
+      description: >
+        Requires two headers: `x-team-id` and `x-secret`.  
+        Both must be sent with each request.
+  schemas:
+    RVMRequest:
+      type: object
+      properties:
+        team_id:
+          type: string
+          description: Located on the API Setting tab. (Required)
+          enum: [<Your Account>]
+        secret:
+          type: string
+          description: Located on the API Setting tab. (Required)
+          enum: [<Your Secret>]
+        foreign_id:
+          type: string
+          description: A value to identify this drop in your system. Will be passed through to you in the webhook callback. Max length 256 characters. (Required)
+          enum: [<Your system's ID>]
+        brand_id:
+          type: string
+          description: Located on in your account's trust center tab. (Required)
+          enum: [<Your Brand GUID>]
+        phone_number:
+          type: string
+          description: Your contact's phone number in E.164 format. (Required)
+          enum: [+15552223333]
+        recording_id:
+          type: string
+          description: The ID of the audio recording to send to your contacts. Located on in your account's recordings tab. *Not required if you are using audio_url or voice_id
+          enum: [<Your Recording GUID>]
+        voice_id:
+          type: string
+          description: The ID of the Mimic AITM voice to use when reading your tts_body. Located on in your account's voices tab. *Not required if you are audio_url or recording_id. Must use in conjunction with tts_body.
+          enum: [<Your Voice GUID>]
+        tts_body:
+          type: string
+          description: The text you want Mimic AITM to convert to speech using the voice_id you specify. *Required if using voice_id
+          enum: [Hey Joe, this is Bob from Brand. I'm calling you because...]
+        audio_url:
+          type: string
+          description: Use of this property requires special approval. Please contact support. | A url to the voicemail audio to play (mp3 or wav). *Not required if you are using recording_id or voice_id
+          enum: [https://example.com/your-file.mp3]
+        audio_type:
+          type: string
+          description: Use of this property requires special approval. Please contact support.
+          enum: [mp3, wav]
+        forwarding_number:
+          type: string
+          description: The phone number to forward calls and texts to when the contact replies to your message. Must be in E.164 format.
+          enum: [+15557778888]
+        phone_ivr_id:
+          type: string
+          description: The IVR to use when your contact calls you back. Located on in your account's phone ivr tab.
+          enum: [<Your IVR GUID>]
+        pool_id:
+          type: string
+          description: The ID of the private number pool to select phone numbers from based on geographic location of your contact.
+          enum: [Defaults to the public pool of shared numbers]
+        postal_code:
+          type: string
+          description: The zip code / postal code of your contact. Supplying a value for postal code is optional but provides more accurate compliance with TCPA calling hours.
+          enum: [02101, 90210-0001]
+        callback_url:
+          type: string
+          description: Override the default RVM webhook url that you specified in your API settings.
+          enum: [http://example.com]
+        byoc:
+          type: object
+          description: Wholesale customers are able to specify SIP Trunks and STIR/SHAKEN credentials.
+          enum: [Please contact us for details]
+      required:
+        - team_id
+        - secret
+        - foreign_id
+        - brand_id
+        - phone_number
+    RVMResponse:
+      type: object
+      properties:
+        status:
+          type: string
+    SMSRequest:
+      type: object
+      properties:
+        team_id:
+          type: string
+          description: Located on the API Setting tab. (Required)
+          enum: [<Your Account>]
+        secret:
+          type: string
+          description: Located on the API Setting tab. (Required)
+          enum: [<Your Secret>]
+        phone_number:
+          type: string
+          description: Your contact's phone number in E.164 format. (Required)
+          enum: [+15552223333]
+        caller_id:
+          type: string
+          description: The phone number to forward calls and texts to when the contact replies to your message. Must be in E.164 format. (Required)
+          enum: [+15557778888]
+        pool_id:
+          type: string
+          description: The ID of the private number pool you registered to send SMS messages. (Required)
+        sms_body:
+          type: string
+          description: Plain text containing your message. Character limit is 160. (Required)
+          maxLength: 160
+          enum: [Hello world]
+        opt_in:
+          type: boolean
+          description: Confirmation that you obtained OPT-IN permission to send SMS to the recipient as required by law. (Required)
+          enum: [true]
+        callback_url:
+          type: string
+          description: Override the default RVM webhook url that you specified in your API settings.
+          enum: [http://example.com]
+        foreign_id:
+          type: string
+          description: A value to identify this drop in your system. Will be passed through to you in the webhook callback.
+          maxLength: 256
+          enum: [<Your system's ID>]
+      required:
+        - team_id
+        - secret
+        - phone_number
+        - caller_id
+        - pool_id
+        - sms_body
+        - opt_in
+    SMSResponse:
+      type: object
+      properties:
+        status:
+          type: string
+    ListCreatedResponse:
+      type: object
+      properties:
+        list_id:
+          type: string
+          description: The UUID of the list. Use this value in other calls to the contact list api endpoints. It is safe to cache this value client side in your app.
+        list_name:
+          type: string
+          description: A string containing the name of the list.
+        created_at:
+          type: integer
+          description: Milliseconds since epoch of when the list was created.
+    ListDetailsResponse:
+      type: object
+      properties:
+        list_id:
+          type: string
+          description: The UUID of the list. Use this value in other calls to the contact list api endpoints. It is safe to cache this value client side in your app.
+        list_name:
+          type: string
+          description: A string containing the name of the list.
+        created_at:
+          type: integer
+          description: Milliseconds since epoch of when the list was created.
+        contact_count:
+          type: integer
+          description: The total number of contacts in the list.
+    AppendContactsRequest:
+      type: object
+      properties:
+        fields:
+          type: array
+          items:
+            type: string
+          description: >
+            Array of strings that define the data types being passed in the Values attribute. It is acceptable to have repeat field types specified if your contacts have multiple phone numbers, pass in the value of “phone” multiple times in this array. Possible field types are: record_id, first_name, last_name, company, email, phone, address1, address2, city, state, postal, country, custom1, custom2, custom3, custom4, custom5. (Required)
+        values:
+          type: array
+          items:
+            type: array
+          description: An array of arrays. Inner arrays contain the values associated with the field types you specify in the fields attribute. You may pass in up to 10,000 contacts per api call. (Required)
+        region:
+          type: string
+          description: The ISO country code to use when converting your phone number values to E.164 format. If yourphone numbers are already formatted in E.164 then the region attribute is ignored. Defaults to US.
+      required:
+        - fields
+        - values
+    AppendContactsResponse:
+      type: object
+      properties:
+        accepted_count:
+          type: integer
+          description: The number of contacts appended to the list.
+        rejected:
+          type: array
+          items:
+            type: object
+            description: An array of objects containing the index of the rejected contact from the value array that you passed to the api and the reason that contact was rejected.
+            properties:
+              index:
+                type: integer
+              reason:
+                type: string
+    BrandListResponse:
+      type: array
+      items:
+        type: object
+        properties:
+          brand_id:
+            type: string
+          company_name:
+            type: string
+          dba_name:
+            type: string
+          trust_score:
+            type: string
+          identity_status:
+            type: string
+    MediaListResponse:
+      type: array
+      items:
+        type: object
+        properties:
+          media_id:
+            type: string
+          name:
+            type: string
+          created_at:
+            type: integer
+          api_allowed:
+            type: boolean
+    RecordingListResponse:
+      type: array
+      items:
+        type: object
+        properties:
+          recording_id:
+            type: string
+          name:
+            type: string
+          created_at:
+            type: integer
+          api_allowed:
+            type: boolean
+    PoolListResponse:
+      type: array
+      items:
+        type: object
+        properties:
+          pool_id:
+            type: string
+          name:
+            type: string
+          brand_id:
+            type: string
+          service_type:
+            type: string
+          number_count:
+            type: integer
+  # Note: Some endpoints use header auth (x-team-id, x-secret).
+security:
+  - teamSecretAuth: []
+tags:
+  - name: rvm
+  - name: sms
+  - name: lists
+  - name: media
+  - name: brand
+  - name: pool

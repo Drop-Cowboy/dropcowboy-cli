@@ -7,6 +7,17 @@ const program = new Command();
 
 program.name('dropcowboy').description('CLI for DropCowboy API').version('1.0.0');
 
+function toSnakeCasePayload(opts: Record<string, any>) {
+    const payload: Record<string, any> = {};
+    Object.entries(opts).forEach(([key, value]) => {
+        if (typeof value !== 'function' && key !== 'parent') {
+            const snakeKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
+            payload[snakeKey] = value;
+        }
+    });
+    return payload;
+}
+
 program
     .command('config')
     .description('Set global credentials')
@@ -21,24 +32,43 @@ program
 program
     .command('send-rvm')
     .description('Send ringless voicemail (rvm)')
-    .requiredOption('--to <to>')
-    .requiredOption('--media-id <mediaId>')
-    .action(async (opts: { to: any; mediaId: any; }) => {
+    .requiredOption('--brand-id <brandId>')
+    .requiredOption('--phone-number <phoneNumber>')
+    .option('--audio-url <audioUrl>')
+    .option('--audio-type <audioType>')
+    .option('--recording-id <recordingId>')
+    .option('--voice-id <voiceId>')
+    .option('--tts-body <ttsBody>')
+    .option('--forwarding-number <forwardingNumber>')
+    .option('--status-format <statusFormat>')
+    .option('--byoc <byoc>')
+    .option('--foreign-id <foreignId>')
+    .option('--privacy <privacy>')
+    .option('--phone-ivr-id <phoneIvrId>')
+    .option('--pool-id <poolId>')
+    .option('--postal-code <postalCode>')
+    .option('--callback-url <callbackUrl>')
+    .action(async (opts: any) => {
         const cfg = getGlobalConfig();
         const client = new DropCowboy(cfg);
-        const payload = { to: opts.to, media_id: opts.mediaId };
+        const payload = toSnakeCasePayload(opts);
         console.log(await client.sendRvm(payload));
     });
 
 program
     .command('send-sms')
     .description('Send SMS')
-    .requiredOption('--to <to>')
-    .requiredOption('--body <body>')
-    .action(async (opts: { to: any; body: any; }) => {
+    .requiredOption('--caller-id <callerId>')
+    .requiredOption('--phone-number <phoneNumber>')
+    .requiredOption('--pool-id <poolId>')
+    .requiredOption('--sms-body <smsBody>')
+    .requiredOption('--opt-in <optIn>')
+    .option('--foreign-id <foreignId>')
+    .option('--callback-url <callbackUrl>')
+    .action(async (opts: any) => {
         const cfg = getGlobalConfig();
         const client = new DropCowboy(cfg);
-        const payload = { to: opts.to, body: opts.body };
+        const payload = toSnakeCasePayload(opts);
         console.log(await client.sendSms(payload));
     });
 
@@ -50,7 +80,7 @@ program
     .action(async (opts: { name: any; }) => {
         const cfg = getGlobalConfig();
         const client = new DropCowboy(cfg);
-        console.log(await client.createContactList({ name: opts.name }));
+        console.log(await client.createContactList({ list_name: opts.name }));
     });
 
 program
@@ -71,7 +101,7 @@ program
     .action(async (opts: { id: string; name: any; }) => {
         const cfg = getGlobalConfig();
         const client = new DropCowboy(cfg);
-        console.log(await client.renameContactList(opts.id, { name: opts.name }));
+        console.log(await client.renameContactList(opts.id, { list_name: opts.name }));
     });
 
 program
@@ -86,42 +116,51 @@ program
 
 program
     .command('contact-list-append')
-    .description('Append contacts to a list (JSON array via --file)')
+    .description('Append contacts to a list')
     .requiredOption('--id <id>')
-    .requiredOption('--file <file>')
-    .action(async (opts: { file: any; id: string; }) => {
-        const fs = await import('fs');
-        const data = JSON.parse(fs.readFileSync(opts.file, 'utf-8'));
+    .requiredOption('--fields <fields>', 'Comma-separated list of field names')
+    .requiredOption('--values <values>', 'JSON array of arrays for contact values')
+    .option('--region <region>', 'Optional JSON array of field types')
+    .action(async (opts: any) => {
         const cfg = getGlobalConfig();
         const client = new DropCowboy(cfg);
-        console.log(await client.appendContactsToList(opts.id, data));
+
+        const payload: { fields: any; values: any; region?: any } = {
+            fields: opts.fields.split(','),
+            values: JSON.parse(opts.values)
+        };
+
+        if (opts.region) payload.region = JSON.parse(opts.region);
+
+        console.log(await client.appendContactsToList(opts.id, payload));
     });
 
 program
     .command('brands')
     .description('List brands')
-    .action(async () => {
+    .option('--api-allowed <apiAllowed>')
+    .action(async (opts: { apiAllowed: string }) => {
         const cfg = getGlobalConfig();
         const client = new DropCowboy(cfg);
-        console.log(await client.listBrands());
+
+        const payload: Record<string, any> = {};
+        if (opts.apiAllowed !== undefined) payload['api_allowed'] = opts.apiAllowed === 'true';
+        
+        console.log(await client.listBrands(payload));
     });
 
 program
     .command('recordings')
     .description('List recordings')
-    .action(async () => {
+    .option('--api-allowed <apiAllowed>')
+    .action(async (opts: { apiAllowed: string; }) => {
         const cfg = getGlobalConfig();
         const client = new DropCowboy(cfg);
-        console.log(await client.listRecordings());
-    });
 
-program
-    .command('media')
-    .description('List media')
-    .action(async () => {
-        const cfg = getGlobalConfig();
-        const client = new DropCowboy(cfg);
-        console.log(await client.listMedia());
+        const payload: Record<string, any> = {};
+        if (opts.apiAllowed !== undefined) payload['api_allowed'] = opts.apiAllowed === 'true';
+
+        console.log(await client.listRecordings(payload));
     });
 
 program
