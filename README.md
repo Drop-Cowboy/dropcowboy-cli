@@ -133,7 +133,7 @@ await client.sendSms({
     sms_body: "Hello world",
     opt_in: true,
     callback_url: "http://example.com",
-    foreign_id: "<Your system's ID>"
+    foreign_id: "00000000-0000-0000-0000-000000000000"
 });
 ```
 
@@ -165,7 +165,7 @@ Lists brands.
 **Example:**
 
 ```ts
-const brands = await client.listBrands({ api_allowed: true });
+const brands = await client.listBrands({});
 ```
 
 ### `listRecordings(query?: Record<string, any>)`

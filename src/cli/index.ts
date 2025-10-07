@@ -138,14 +138,10 @@ program
 program
     .command('brands')
     .description('List brands')
-    .option('--api-allowed <apiAllowed>')
-    .action(async (opts: { apiAllowed: string }) => {
+    .action(async () => {
         const cfg = getGlobalConfig();
         const client = new DropCowboy(cfg);
-
         const payload: Record<string, any> = {};
-        if (opts.apiAllowed !== undefined) payload['api_allowed'] = opts.apiAllowed === 'true';
-        
         console.log(await client.listBrands(payload));
     });
 

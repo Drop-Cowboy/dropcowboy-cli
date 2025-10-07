@@ -145,12 +145,6 @@ paths:
   /brand:
     get:
       summary: List brands
-      parameters:
-        - in: query
-          name: api_allowed
-          schema:
-            type: boolean
-          description: Filter brands by whether API access has been granted or not.
       description: Invoke our brand api from your application by sending an HTTP GET containing with the attributes listed.
       responses:
         '200':
@@ -421,10 +415,10 @@ components:
             type: string
           dba_name:
             type: string
-          trust_score:
-            type: string
-          identity_status:
-            type: string
+          registered:
+            type: boolean
+          api_allowed:
+            type: boolean
     MediaListResponse:
       type: array
       items:
@@ -443,7 +437,7 @@ components:
       items:
         type: object
         properties:
-          recording_id:
+          media_id:
             type: string
           name:
             type: string
