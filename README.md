@@ -127,8 +127,8 @@ Sends an SMS message.
 
 ```ts
 await client.sendSms({
-    phone_number: 15552223333,
-    caller_id: 15557778888,
+    phone_number: "+15552223333",
+    caller_id: "+15557778888",
     pool_id: "text",
     sms_body: "Hello world",
     opt_in: true,
