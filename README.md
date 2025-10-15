@@ -149,7 +149,7 @@ await client.sendSms({
 
 ```ts
 const list = await client.createContactList({ list_name: 'Leads' });
-await client.appendContactsToList(list.id, {
+await client.appendContactsToList(list.list_id, {
     fields: ['first_name', 'email'],
     values: [
         ['hunter', 'hunter@email.com'],
